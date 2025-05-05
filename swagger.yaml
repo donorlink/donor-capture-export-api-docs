@@ -10,25 +10,51 @@ info:
     - Support for sorting, pagination, and content negotiation (`application/json` or `application/xml`).
     - Secured using Basic Authentication.
 
-    ### Authentication
-    All endpoints require Basic Authentication.
+    ## 🔐 Authentication (Basic Auth)
+    This API uses **Basic Authentication** for all requests.
 
-    To authenticate:
-    - Log in to the **Client Portal**.
-    - Navigate to the **Export Setting, API Access** section.
-    - Copy your **API Key** and **API Secret**.
-    - Use these values as follows:
-      - **Username** = API Key
-      - **Password** = API Secret
+    - **Username**: Your **API Key** from the Client Portal
+    - **Password**: Your **API Secret** from the Client Portal
+
+    To get your API credentials:
+    1. Log in to the **Client Portal**
+    2. Go to **Export setting, API Access**
+    3. Copy your **API Key** and **API Secret**
+
+    These credentials must be included in every request using the `Authorization` header.
+
+    ### 🔄 How Basic Auth Works
+    1. Your API key and secret are joined like `apiKey:apiSecret`
+    2. This is Base64 encoded
+    3. The result is passed in the `Authorization` header as:
+       ```
+       Authorization: Basic <base64(apiKey:apiSecret)>
+       ```
 
     Example curl request:
     ```
     curl -u <apiKey>:<apiSecret> "https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com/api/pledge/12345"
     ```
+    or
+    ```
+    curl -X 'GET' \
+    'https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com/api/pledge/2' \
+    -H 'accept: application/json' \
+    -H 'Authorization: Basic YXBpa2V5OmFwaXNlY3JldA=='
+    ```
+    
+    Bulk endpoint curl example
     ```
     curl -u <apiKey>:<apiSecret> \
       "https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com/api/pledges?limit=50&offset=0&sort_by=createdAt&order_by=desc" \
       -H "Accept: application/json"
+    ```
+    or
+    ```
+    curl -X 'GET' \
+    'https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com/api/pledges?limit=100&offset=0&sort_by=createdAt&order_by=asc' \
+    -H 'accept: application/json' \
+    -H 'Authorization: Basic YXBpa2V5OmFwaXNlY3JldA=='
     ```
 
   version: 1.0.0
