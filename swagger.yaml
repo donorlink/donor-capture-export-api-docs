@@ -1,43 +1,92 @@
 openapi: 3.0.0
 info:
   title: Export API
-  description: API to fetch pledge data and bulk data with optional sorting and pagination.
+  description: |
+    This API allows clients to retrieve pledge-related data either individually or in bulk.
+
+    Features:
+    - Retrieve a single pledge by ID.
+    - Retrieve a paginated list of pledges.
+    - Support for sorting, pagination, and content negotiation (`application/json` or `application/xml`).
+    - Secured using Basic Authentication.
+
+    ### Authentication
+    All endpoints require Basic Authentication.
+
+    To authenticate:
+    - Log in to the **Client Portal**.
+    - Navigate to the **Export Setting, API Access** section.
+    - Copy your **API Key** and **API Secret**.
+    - Use these values as follows:
+      - **Username** = API Key
+      - **Password** = API Secret
+
+    Example curl request:
+    ```
+    curl -u <apiKey>:<apiSecret> "https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com/api/pledge/12345"
+    ```
+    ```
+    curl -u <apiKey>:<apiSecret> \
+      "https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com/api/pledges?limit=50&offset=0&sort_by=createdAt&order_by=desc" \
+      -H "Accept: application/json"
+    ```
+
   version: 1.0.0
 servers:
-  - url:  https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com
+  - url: https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com
     description: Production server
-    variables:
-      host:
-        default:  https://vak1v0ajec.execute-api.ap-southeast-2.amazonaws.com
+
 components:
   securitySchemes:
     basicAuth:
       type: http
       scheme: basic
+      description: |
+        Use Basic Authentication to access the API.
+
+        - Username: Your **API Key** from the Client Portal.
+        - Password: Your **API Secret** from the Client Portal.
+
+        Example:
+        ```
+        Authorization: Basic base64(apiKey:apiSecret)
+        ```
+
 paths:
   /api/pledge/{pledgeId}:
     get:
-      summary: Fetch a single pledge
-      description: Retrieve a single pledge by its ID from a user-specific table.
+      summary: Get Pledge by ID
+      description: |
+        Retrieve detailed information about a specific pledge using its unique identifier.
+        This endpoint is secured with Basic Authentication.
+        
+        To authenticate:
+        - Use your API Key as the username.
+        - Use your API Secret as the password.
+
       security:
         - basicAuth: []
       parameters:
         - name: pledgeId
           in: path
-          description: The ID of the pledge to retrieve.
+          description: Unique identifier for the pledge.
           required: true
           schema:
             type: string
+            example: "12345-abcde"
         - name: Accept
           in: header
-          description: Specifies the response format (`application/json` or `application/xml`).
+          description: Desired response format. Supports `application/json` or `application/xml`.
           required: false
           schema:
             type: string
             default: application/json
+            enum:
+              - application/json
+              - application/xml
       responses:
         '200':
-          description: Successful response
+          description: Pledge successfully retrieved
           content:
             application/json:
               schema:
@@ -45,17 +94,22 @@ paths:
                 properties:
                   id:
                     type: string
+                    example: "12345-abcde"
                   name:
                     type: string
+                    example: "John Doe"
                   amount:
                     type: number
+                    format: float
+                    example: 100.5
                   status:
                     type: string
+                    example: "active"
             application/xml:
               schema:
                 type: string
         '400':
-          description: Missing pledgeId in path parameters
+          description: Invalid or missing pledge ID
           content:
             application/json:
               schema:
@@ -63,8 +117,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: "Missing or invalid pledgeId"
         '401':
-          description: Unauthorized
+          description: Unauthorized access
           content:
             application/json:
               schema:
@@ -72,6 +127,7 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: "Unauthorized"
         '404':
           description: Pledge not found
           content:
@@ -81,8 +137,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: "Pledge not found"
         '500':
-          description: Internal server error
+          description: Server error while retrieving pledge
           content:
             application/json:
               schema:
@@ -90,41 +147,55 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: "Internal server error"
                   details:
                     type: string
+                    example: "Database connection failed"
+
   /api/pledges:
     get:
-      summary: Fetch paginated data
-      description: Fetch a paginated list of records with optional sorting and response format.
+      summary: Get Paginated List of Pledges
+      description: |
+        Retrieve a list of pledges with support for pagination, sorting, and content negotiation.
+        This endpoint is secured with Basic Authentication.
+
+        To authenticate:
+        - Use your API Key from the Client Portal as the username.
+        - Use your API Secret as the password.
+
       security:
         - basicAuth: []
       parameters:
         - name: limit
           in: query
-          description: The maximum number of records to retrieve.
+          description: Maximum number of records to return. Default is 100.
           required: false
           schema:
             type: integer
+            minimum: 1
+            maximum: 1000
             default: 100
         - name: offset
           in: query
-          description: The starting point for records to retrieve (used for pagination).
+          description: Number of records to skip. Useful for pagination.
           required: false
           schema:
             type: integer
+            minimum: 0
             default: 0
         - name: sort_by
           in: query
-          description: The column to sort by (e.g., `createdAt`, `updatedAt`).
+          description: Field to sort results by.
           required: false
           schema:
             type: string
             enum:
               - createdAt
               - updatedAt
+            example: createdAt
         - name: order_by
           in: query
-          description: The sorting order (`asc` for ascending, `desc` for descending).
+          description: Sort direction.
           required: false
           schema:
             type: string
@@ -134,14 +205,17 @@ paths:
             default: asc
         - name: Accept
           in: header
-          description: Specifies the response format (`application/json` or `application/xml`).
+          description: Desired response format. Supports `application/json` or `application/xml`.
           required: false
           schema:
             type: string
             default: application/json
+            enum:
+              - application/json
+              - application/xml
       responses:
         '200':
-          description: Successful response
+          description: List of pledges successfully retrieved
           content:
             application/json:
               schema:
@@ -151,20 +225,37 @@ paths:
                     type: array
                     items:
                       type: object
+                      properties:
+                        id:
+                          type: string
+                          example: "12345-abcde"
+                        name:
+                          type: string
+                          example: "Jane Doe"
+                        amount:
+                          type: number
+                          format: float
+                          example: 75.0
+                        status:
+                          type: string
+                          example: "pending"
                   pagination:
                     type: object
                     properties:
                       limit:
                         type: integer
+                        example: 100
                       offset:
                         type: integer
+                        example: 0
                       total:
                         type: integer
+                        example: 254
             application/xml:
               schema:
                 type: string
         '401':
-          description: Unauthorized
+          description: Unauthorized access
           content:
             application/json:
               schema:
@@ -172,8 +263,9 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: "Unauthorized"
         '500':
-          description: Internal server error
+          description: Server error while retrieving pledge list
           content:
             application/json:
               schema:
@@ -181,5 +273,7 @@ paths:
                 properties:
                   error:
                     type: string
+                    example: "Internal server error"
                   details:
                     type: string
+                    example: "Database timeout"
